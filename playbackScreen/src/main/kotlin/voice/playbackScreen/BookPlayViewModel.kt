@@ -62,11 +62,13 @@ class BookPlayViewModel
       repo.flow(bookId).filterNotNull(),
       playStateManager.flow,
       sleepTimer.leftSleepTimeFlow,
-    ) { book, playState, sleepTime ->
+      sleepTimer.sleepAtEocFlow,
+    ) { book, playState, sleepTime, sleepAtEoc ->
       val currentMark = book.currentChapter.markForPosition(book.content.positionInChapter)
       val hasMoreThanOneChapter = book.chapters.sumOf { it.chapterMarks.count() } > 1
       BookPlayViewState(
         sleepTime = sleepTime,
+        sleepEoc = sleepAtEoc,
         playing = playState == PlayStateManager.PlayState.Playing,
         title = book.content.name,
         showPreviousNextButtons = hasMoreThanOneChapter,

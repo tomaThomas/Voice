@@ -73,10 +73,15 @@ class SleepTimerDialogController(bundle: Bundle) : DialogController(bundle) {
         } else {
           binding.fab.hide()
         }
+        binding.fab2.show();
       }
     }
     binding.fab.setOnClickListener {
       viewModel.onConfirmButtonClicked(args.getBookId(NI_BOOK_ID)!!)
+      dismissDialog()
+    }
+    binding.fab2.setOnClickListener {
+      viewModel.onConfirmEocButtonClicked(args.getBookId(NI_BOOK_ID)!!)
       dismissDialog()
     }
 

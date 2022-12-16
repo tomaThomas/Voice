@@ -143,6 +143,7 @@ private fun BookPlayContent(
         cover = viewState.cover,
         onPlayClick = onPlayClick,
         sleepTime = viewState.sleepTime,
+        sleepEoc = viewState.sleepEoc,
         modifier = Modifier
           .fillMaxHeight()
           .weight(1F)
@@ -180,6 +181,7 @@ private fun BookPlayContent(
         onPlayClick = onPlayClick,
         cover = viewState.cover,
         sleepTime = viewState.sleepTime,
+        sleepEoc = viewState.sleepEoc,
         modifier = Modifier
           .fillMaxWidth()
           .weight(1F)
@@ -224,7 +226,7 @@ private fun BookPlayAppBar(
   val appBarActions: @Composable RowScope.() -> Unit = {
     IconButton(onClick = onSleepTimerClick) {
       Icon(
-        imageVector = if (viewState.sleepTime == ZERO) {
+        imageVector = if (!viewState.sleepEoc && viewState.sleepTime == ZERO) {
           Icons.Outlined.Bedtime
         } else {
           Icons.Outlined.BedtimeOff
@@ -359,12 +361,13 @@ private fun OverflowMenu(
 private fun CoverRow(
   cover: ImmutableFile?,
   sleepTime: Duration,
+  sleepEoc: Boolean,
   onPlayClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Box(modifier) {
     Cover(onDoubleClick = onPlayClick, cover = cover)
-    if (sleepTime != ZERO) {
+    if (sleepTime != ZERO || sleepEoc) {
       Text(
         modifier = Modifier
           .align(Alignment.TopEnd)
@@ -374,10 +377,13 @@ private fun CoverRow(
             shape = RoundedCornerShape(20.dp),
           )
           .padding(horizontal = 20.dp, vertical = 16.dp),
-        text = formatTime(
-          timeMs = sleepTime.inWholeMilliseconds,
-          durationMs = sleepTime.inWholeMilliseconds,
-        ),
+        text = when (sleepEoc) {
+          true -> stringResource(R.string.end_of_chapter)
+          false -> formatTime(
+            timeMs = sleepTime.inWholeMilliseconds,
+            durationMs = sleepTime.inWholeMilliseconds,
+          )
+        },
         color = Color.White,
       )
     }
@@ -549,7 +555,8 @@ private class BookPlayViewStatePreviewProvider : PreviewParameterProvider<BookPl
       playedTime = 3.minutes,
       playing = true,
       skipSilence = true,
-      sleepTime = 4.minutes,
+      sleepTime = 1.minutes,
+      sleepEoc = true,
       title = "Das Ende der Welt",
     )
     yield(initial)

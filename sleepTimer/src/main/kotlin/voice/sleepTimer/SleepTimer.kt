@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import voice.common.AppScope
+import voice.common.BookId
 import voice.common.pref.PrefKeys
+import voice.data.repo.BookRepository
 import voice.logging.core.Logger
 import voice.playback.PlayerController
 import voice.playback.playstate.PlayStateManager
@@ -36,6 +38,7 @@ class SleepTimer
   @Named(PrefKeys.SLEEP_TIME)
   private val sleepTimePref: Pref<Int>,
   private val playerController: PlayerController,
+  private val bookRepo: BookRepository,
 ) : PlaybackSleepTimer {
 
   private val scope = MainScope()
@@ -43,14 +46,21 @@ class SleepTimer
   private val fadeOutDuration = 10.seconds
 
   private val _leftSleepTime = MutableStateFlow(Duration.ZERO)
+  private val _sleepAtEoc = MutableStateFlow(false)
   private var leftSleepTime: Duration
     get() = _leftSleepTime.value
     set(value) {
       _leftSleepTime.value = value
     }
+  private var sleepAtEoc: Boolean
+    get() = _sleepAtEoc.value
+    set(value) {
+      _sleepAtEoc.value = value
+    }
   override val leftSleepTimeFlow: Flow<Duration> get() = _leftSleepTime
+  val sleepAtEocFlow: Flow<Boolean> get() = _sleepAtEoc
 
-  override fun sleepTimerActive(): Boolean = sleepJob?.isActive == true && leftSleepTime > Duration.ZERO
+  override fun sleepTimerActive(): Boolean = (sleepJob?.isActive == true && leftSleepTime > Duration.ZERO) || sleepAtEoc
 
   private var sleepJob: Job? = null
 
@@ -58,6 +68,15 @@ class SleepTimer
     Logger.i("enable=$enable")
     if (enable) {
       start()
+    } else {
+      cancel()
+    }
+  }
+
+  fun setEoc(enable: Boolean, bookId: BookId) {
+    Logger.i("sleep at EOC enable=$enable")
+    if (enable) {
+      startEoc(bookId)
     } else {
       cancel()
     }
@@ -82,6 +101,26 @@ class SleepTimer
     }
   }
 
+  private fun startEoc(bookId: BookId) {
+    Logger.i("Starting sleepTimer. Pause at end of chapter.")
+    sleepAtEoc = true
+    sleepJob?.cancel()
+    sleepJob = scope.launch {
+      startSleepEocCountdown(bookId)
+      sleepAtEoc = false
+      val shakeToResetTime = 30.seconds
+      Logger.d("Wait for $shakeToResetTime for a shake")
+      withTimeout(shakeToResetTime) {
+        shakeDetector.detect()
+        Logger.i("Shake detected. Reset sleep time")
+        playerController.play()
+        startEoc(bookId)
+      }
+      Logger.i("exiting")
+    }
+    playerController.setVolume(1F)
+  }
+
   private suspend fun startSleepTimerCountdown() {
     var interval = 500.milliseconds
     while (leftSleepTime > Duration.ZERO) {
@@ -95,6 +134,27 @@ class SleepTimer
     }
     playerController.pauseWithRewind(fadeOutDuration)
     playerController.setVolume(1F)
+  }
+
+  private suspend fun startSleepEocCountdown(bookId: BookId) {
+    var book = bookRepo.get(bookId) ?: return
+    val chapter = book.content.currentChapterIndex
+
+    while (true) {
+      suspendUntilPlaying()
+
+      book = bookRepo.get(bookId) ?: return
+      if (chapter != book.content.currentChapterIndex) {
+        break
+      }
+
+      var timeLeft = ((book.currentChapter.duration - book.content.positionInChapter) * book.content.playbackSpeed).toLong()
+      if (timeLeft > 250) timeLeft /= 2
+      if (timeLeft > 5000) timeLeft = 5000
+
+      delay(timeLeft.milliseconds)
+    }
+    playerController.playPause()
   }
 
   private fun updateVolumeForSleepTime() {
@@ -122,5 +182,6 @@ class SleepTimer
     sleepJob?.cancel()
     leftSleepTime = Duration.ZERO
     playerController.setVolume(1F)
+    sleepAtEoc = false
   }
 }

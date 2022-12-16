@@ -73,6 +73,11 @@ class SleepTimerDialogViewModel
     }
     sleepTimer.setActive(true)
   }
+
+  fun onConfirmEocButtonClicked(bookId: BookId) {
+    sleepTimer.setActive(false)
+    sleepTimer.setEoc(true, bookId);
+  }
 }
 
 data class SleepTimerDialogViewState(

@@ -13,6 +13,13 @@
     app:layout_constraintGuide_end="44dp" />
 
   <androidx.constraintlayout.widget.Guideline
+    android:id="@+id/fab2X"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    android:orientation="vertical"
+    app:layout_constraintGuide_begin="44dp" />
+
+  <androidx.constraintlayout.widget.Guideline
     android:id="@+id/fabY"
     android:layout_width="0dp"
     android:layout_height="0dp"
@@ -195,6 +202,18 @@
     app:layout_constraintBottom_toBottomOf="@id/fabY"
     app:layout_constraintLeft_toLeftOf="@id/fabX"
     app:layout_constraintRight_toRightOf="@id/fabX"
+    app:layout_constraintTop_toTopOf="@id/fabY" />
+
+  <com.google.android.material.floatingactionbutton.FloatingActionButton
+    android:id="@+id/fab2"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="32dp"
+    android:contentDescription="@string/action_sleep"
+    android:src="@drawable/skip"
+    app:layout_constraintBottom_toBottomOf="@id/fabY"
+    app:layout_constraintLeft_toLeftOf="@id/fab2X"
+    app:layout_constraintRight_toRightOf="@id/fab2X"
     app:layout_constraintTop_toTopOf="@id/fabY" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
