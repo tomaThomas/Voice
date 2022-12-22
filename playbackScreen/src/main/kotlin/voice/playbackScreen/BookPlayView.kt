@@ -378,7 +378,7 @@ private fun CoverRow(
           )
           .padding(horizontal = 20.dp, vertical = 16.dp),
         text = when (sleepEoc) {
-          true -> stringResource(R.string.end_of_chapter)
+          true -> stringResource(StringsR.string.end_of_chapter)
           false -> formatTime(
             timeMs = sleepTime.inWholeMilliseconds,
             durationMs = sleepTime.inWholeMilliseconds,

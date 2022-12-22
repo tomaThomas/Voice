@@ -148,11 +148,9 @@ class SleepTimer
         break
       }
 
-      var timeLeft = ((book.currentChapter.duration - book.content.positionInChapter) * book.content.playbackSpeed).toLong()
-      if (timeLeft > 250) timeLeft /= 2
-      if (timeLeft > 5000) timeLeft = 5000
+      val timeLeft = ((book.currentChapter.duration - book.content.positionInChapter) * book.content.playbackSpeed).toLong() / 2
 
-      delay(timeLeft.milliseconds)
+      delay(timeLeft.coerceAtLeast(125).coerceAtMost(5000).milliseconds)
     }
     playerController.playPause()
   }
